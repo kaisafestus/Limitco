@@ -20,6 +20,9 @@ export const validatePayheroConfig = () => {
   
   if (missing.length > 0) {
     console.error('Missing Payhero environment variables:', missing);
+    console.error('PAYHERO_API_USERNAME value:', PAYHERO_CONFIG.API_USERNAME ? 'SET' : 'MISSING');
+    console.error('PAYHERO_API_PASSWORD value:', PAYHERO_CONFIG.API_PASSWORD ? 'SET' : 'MISSING');
+    console.error('PAYHERO_CHANNEL_ID value:', PAYHERO_CONFIG.CHANNEL_ID ? 'SET' : 'MISSING');
     console.error('Please add these to your Vercel environment variables');
     return false;
   }
