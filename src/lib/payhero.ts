@@ -10,6 +10,23 @@ export const PAYHERO_CONFIG = {
   BASE_URL: process.env.PAYHERO_BASE_URL || "https://backend.payhero.co.ke"
 };
 
+// Validate environment variables
+export const validatePayheroConfig = () => {
+  const missing = [];
+  
+  if (!PAYHERO_CONFIG.API_USERNAME) missing.push('PAYHERO_API_USERNAME');
+  if (!PAYHERO_CONFIG.API_PASSWORD) missing.push('PAYHERO_API_PASSWORD');
+  if (!PAYHERO_CONFIG.CHANNEL_ID) missing.push('PAYHERO_CHANNEL_ID');
+  
+  if (missing.length > 0) {
+    console.error('Missing Payhero environment variables:', missing);
+    console.error('Please add these to your Vercel environment variables');
+    return false;
+  }
+  
+  return true;
+};
+
 // Generate Basic Auth token from username and password
 export const getBasicAuthToken = () => {
   const username = PAYHERO_CONFIG.API_USERNAME;
@@ -62,7 +79,15 @@ export interface PaymentResponse {
 // Initiate Payhero STK Push
 export async function initiatePayheroPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
   try {
-    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v1/payments`, {
+    // Validate configuration before making request
+    if (!validatePayheroConfig()) {
+      return {
+        success: false,
+        message: 'Payhero configuration is incomplete. Please check environment variables.',
+      };
+    }
+    
+    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v2/payments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
