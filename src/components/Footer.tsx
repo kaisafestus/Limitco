@@ -6,10 +6,10 @@ export function Footer() {
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-16 px-4 relative z-10">
       <div className="max-w-7xl mx-auto">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-12 mb-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
           
           {/* Company Info */}
-          <div className="space-y-6">
+          <div className="space-y-6 sm:col-span-2 lg:col-span-1">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-12 h-12 bg-[#28a745] rounded-xl flex items-center justify-center transform transition-transform group-hover:scale-110">
                 <Image 
@@ -71,7 +71,7 @@ export function Footer() {
                   </svg>
                 </div>
                 <div>
-                  <span className="font-medium">07XX XXX XXX</span>
+                  <span className="font-medium">0720000000</span>
                   <span className="text-gray-400">24/7 Support</span>
                 </div>
               </li>
@@ -114,26 +114,24 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 pt-8">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-6">
-              {/* Security Badges */}
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 rounded-lg">
-                  <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 2-2 2-2 2 0 0 0 2 2l-2 7-7a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1 1v3a1 1 0 0 0 1 1z"/>
-                  </svg>
-                  <span className="text-green-400 text-sm font-medium">SSL Secured</span>
-                </div>
-                <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-lg">
-                  <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 5.52 2 10 10 6.48 22 22 17.52 22 10 17.52 22 10 6.48 2 2 5.52 2 2 10 10 6.48 22 22 17.52 22 10 6.48 2 2 5.52 2 2 10 10 6.48 22 22 17.52 22 10 6.48 2 2z"/>
-                  </svg>
-                  <span className="text-blue-400 text-sm font-medium">M-Pesa Verified</span>
-                </div>
+          <div className="flex flex-col items-center gap-4 md:flex-row md:justify-between">
+            {/* Security Badges */}
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex items-center gap-2 px-3 py-1 bg-green-500/20 rounded-lg">
+                <svg className="w-4 h-4 text-green-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 2-2 2-2 2 0 0 0 2 2l-2 7-7a1 1 0 0 0-1 1v3a1 1 0 0 0 1 1h3a1 1 0 0 0 1 1v3a1 1 0 0 0 1 1z"/>
+                </svg>
+                <span className="text-green-400 text-sm font-medium">SSL Secured</span>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 rounded-lg">
+                <svg className="w-4 h-4 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 5.52 2 10 10 6.48 22 22 17.52 22 10 17.52 22 10 6.48 2 2 5.52 2 2 10 10 6.48 22 22 17.52 22 10 6.48 2 2 5.52 2 2 10 10 6.48 22 22 17.52 22 10 6.48 2 2z"/>
+                </svg>
+                <span className="text-blue-400 text-sm font-medium">M-Pesa Verified</span>
               </div>
             </div>
             
-            <div className="text-center">
+            <div className="text-center md:text-right">
               <p className="text-gray-400 text-sm">
                 &copy; 2024 Fuliza Boost. Official Safaricom Partner. All rights reserved.
               </p>
