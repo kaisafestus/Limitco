@@ -1,13 +1,21 @@
 // Payhero Payment Integration Configuration
+// Debug all environment variables
+console.log('=== PAYHERO ENVIRONMENT DEBUG ===');
+console.log('process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME:', process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME);
+console.log('process.env.PAYHERO_API_USERNAME:', process.env.PAYHERO_API_USERNAME);
+console.log('All process.env keys:', Object.keys(process.env).filter(key => key.includes('PAYHERO')));
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('================================');
+
 export const PAYHERO_CONFIG = {
-  API_USERNAME: process.env.PAYHERO_API_USERNAME || "",
-  API_PASSWORD: process.env.PAYHERO_API_PASSWORD || "",
-  ACCOUNT_ID: process.env.PAYHERO_ACCOUNT_ID || "",
-  BASIC_AUTH_TOKEN: process.env.PAYHERO_BASIC_AUTH_TOKEN || "",
-  CHANNEL_ID: process.env.PAYHERO_CHANNEL_ID || "",
-  ACCOUNT_NUMBER: process.env.PAYHERO_ACCOUNT_NUMBER || "",
-  CALLBACK_URL: process.env.PAYHERO_CALLBACK_URL || "",
-  BASE_URL: process.env.PAYHERO_BASE_URL || "https://backend.payhero.co.ke"
+  API_USERNAME: process.env.PAYHERO_API_USERNAME || process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME || "",
+  API_PASSWORD: process.env.PAYHERO_API_PASSWORD || process.env.NEXT_PUBLIC_PAYHERO_API_PASSWORD || "",
+  ACCOUNT_ID: process.env.PAYHERO_ACCOUNT_ID || process.env.NEXT_PUBLIC_PAYHERO_ACCOUNT_ID || "",
+  BASIC_AUTH_TOKEN: process.env.PAYHERO_BASIC_AUTH_TOKEN || process.env.NEXT_PUBLIC_PAYHERO_BASIC_AUTH_TOKEN || "",
+  CHANNEL_ID: process.env.PAYHERO_CHANNEL_ID || process.env.NEXT_PUBLIC_PAYHERO_CHANNEL_ID || "",
+  ACCOUNT_NUMBER: process.env.PAYHERO_ACCOUNT_NUMBER || process.env.NEXT_PUBLIC_PAYHERO_ACCOUNT_NUMBER || "",
+  CALLBACK_URL: process.env.PAYHERO_CALLBACK_URL || process.env.NEXT_PUBLIC_PAYHERO_CALLBACK_URL || "",
+  BASE_URL: process.env.PAYHERO_BASE_URL || process.env.NEXT_PUBLIC_PAYHERO_BASE_URL || "https://backend.payhero.co.ke"
 };
 
 // Validate environment variables
