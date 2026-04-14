@@ -22,12 +22,7 @@ export default function Home() {
     setShowPurchaseModal(true);
   };
 
-  const handleProceedToPayment = (userData: { phoneNumber: string; fullName: string; idNumber: string }) => {
-    setUserPhone(userData.phoneNumber);
-    setShowPurchaseModal(false);
-    setShowSTKPush(true);
-  };
-
+  
   const handlePaymentSuccess = () => {
     // Redirect to success page or show success state
     console.log("Payment successful for:", selectedPackage);
@@ -61,12 +56,14 @@ export default function Home() {
       <Footer />
 
       {/* Package Purchase Modal */}
-      <PackagePurchaseModal
-        isOpen={showPurchaseModal}
-        onClose={handleClosePurchaseModal}
-        selectedPackage={selectedPackage}
-        onProceedToPayment={handleProceedToPayment}
-      />
+      {selectedPackage && (
+        <PackagePurchaseModal
+          isOpen={showPurchaseModal}
+          onClose={handleClosePurchaseModal}
+          selectedPackage={selectedPackage}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+      )}
 
       {/* STK Push Modal */}
       <STKPushModal
