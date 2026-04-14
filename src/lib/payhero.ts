@@ -12,26 +12,31 @@ export const PAYHERO_CONFIG = {
 
 // Generate Basic Auth token from username and password
 export const getBasicAuthToken = () => {
-  // First try the pre-encoded token if available
-  if (PAYHERO_CONFIG.BASIC_AUTH_TOKEN) {
-    console.log('Using pre-encoded Basic Auth token');
-    return PAYHERO_CONFIG.BASIC_AUTH_TOKEN;
-  }
-  
-  // Fallback to generating from username/password
   const username = PAYHERO_CONFIG.API_USERNAME;
   const password = PAYHERO_CONFIG.API_PASSWORD;
-  const credentials = `${username}:${password}`;
-  const token = `Basic ${Buffer.from(credentials).toString('base64')}`;
   
-  // Debug logging
-  console.log('Payhero Auth Debug:');
+  // Try multiple authentication methods
+  const methods = [
+    // Method 1: Pre-encoded token
+    PAYHERO_CONFIG.BASIC_AUTH_TOKEN,
+    
+    // Method 2: Manual encoding
+    `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
+    
+    // Method 3: URL-safe encoding
+    `Basic ${Buffer.from(`${username}:${password}`).toString('base64').replace(/\+/g, '-').replace(/\//g, '_')}`,
+  ];
+  
+  // Debug all methods
+  console.log('Payhero Auth Debug - All Methods:');
   console.log('Username:', username);
   console.log('Password:', password ? '***' : 'MISSING');
-  console.log('Credentials:', credentials);
-  console.log('Generated Token:', token);
+  console.log('Method 1 (Pre-encoded):', methods[0]);
+  console.log('Method 2 (Manual):', methods[1]);
+  console.log('Method 3 (URL-safe):', methods[2]);
   
-  return token;
+  // Return the pre-encoded token if available, otherwise try manual
+  return methods[0] || methods[1];
 };
 
 // Payment request interface
@@ -57,7 +62,7 @@ export interface PaymentResponse {
 // Initiate Payhero STK Push
 export async function initiatePayheroPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
   try {
-    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v2/payments`, {
+    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v1/payments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
