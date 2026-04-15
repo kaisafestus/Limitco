@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { PackageTier } from "@/lib/pricing";
 import { Phone, User, Shield, CheckCircle, ArrowRight } from "lucide-react";
 import { X } from "lucide-react";
-import { initiatePayheroPayment, formatPhoneNumberForPayhero } from "@/lib/payhero";
+import { formatPhoneNumberForPayhero } from "@/lib/payhero";
 
 interface PackagePurchaseModalProps {
   isOpen: boolean;
@@ -44,24 +44,30 @@ export function PackagePurchaseModal({
       // Format phone number for Payhero
       const formattedPhone = formatPhoneNumberForPayhero(formData.phoneNumber);
       
-      // Initiate Payhero payment
-      const paymentResult = await initiatePayheroPayment({
-        amount: selectedPackage.price,
-        phoneNumber: formattedPhone,
-        externalReference: `FULIZA_${selectedPackage.id}`,
-        customerName: formData.fullName,
-        callbackUrl: "https://limitco.vercel.app/api/payment/callback"
+      const response = await fetch('/api/payhero', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          amount: selectedPackage.price,
+          phoneNumber: formattedPhone,
+          externalReference: `FULIZA_${selectedPackage.id}_${Date.now()}`,
+          customerName: formData.fullName,
+          })
+        })
       });
-      
-      if (paymentResult.success) {
-        // Payment initiated successfully
+
+      const paymentResult = await response.json();
+
+      if (response.ok && paymentResult.success) {
+        alert('Payment initiated! Please check your phone for M-Pesa prompt.');
         if (onPaymentSuccess) {
           onPaymentSuccess(paymentResult.checkoutRequestID || '');
         }
         onClose();
       } else {
-        // Payment failed
-        alert(`Payment failed: ${paymentResult.message}`);
+        alert(`Payment failed: ${paymentResult.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Payment error:', error);

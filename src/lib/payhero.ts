@@ -1,21 +1,13 @@
 // Payhero Payment Integration Configuration
-// Debug all environment variables
-console.log('=== PAYHERO ENVIRONMENT DEBUG ===');
-console.log('process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME:', process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME);
-console.log('process.env.PAYHERO_API_USERNAME:', process.env.PAYHERO_API_USERNAME);
-console.log('All process.env keys:', Object.keys(process.env).filter(key => key.includes('PAYHERO')));
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('================================');
-
 export const PAYHERO_CONFIG = {
-  API_USERNAME: process.env.PAYHERO_API_USERNAME || process.env.NEXT_PUBLIC_PAYHERO_API_USERNAME || "",
-  API_PASSWORD: process.env.PAYHERO_API_PASSWORD || process.env.NEXT_PUBLIC_PAYHERO_API_PASSWORD || "",
-  ACCOUNT_ID: process.env.PAYHERO_ACCOUNT_ID || process.env.NEXT_PUBLIC_PAYHERO_ACCOUNT_ID || "",
-  BASIC_AUTH_TOKEN: process.env.PAYHERO_BASIC_AUTH_TOKEN || process.env.NEXT_PUBLIC_PAYHERO_BASIC_AUTH_TOKEN || "",
-  CHANNEL_ID: process.env.PAYHERO_CHANNEL_ID || process.env.NEXT_PUBLIC_PAYHERO_CHANNEL_ID || "",
-  ACCOUNT_NUMBER: process.env.PAYHERO_ACCOUNT_NUMBER || process.env.NEXT_PUBLIC_PAYHERO_ACCOUNT_NUMBER || "",
-  CALLBACK_URL: process.env.PAYHERO_CALLBACK_URL || process.env.NEXT_PUBLIC_PAYHERO_CALLBACK_URL || "",
-  BASE_URL: process.env.PAYHERO_BASE_URL || process.env.NEXT_PUBLIC_PAYHERO_BASE_URL || "https://backend.payhero.co.ke"
+  API_USERNAME: process.env.PAYHERO_API_USERNAME || "",
+  API_PASSWORD: process.env.PAYHERO_API_PASSWORD || "",
+  ACCOUNT_ID: process.env.PAYHERO_ACCOUNT_ID || "",
+  BASIC_AUTH_TOKEN: process.env.PAYHERO_BASIC_AUTH_TOKEN || "",
+  CHANNEL_ID: process.env.PAYHERO_CHANNEL_ID || "",
+  ACCOUNT_NUMBER: process.env.PAYHERO_ACCOUNT_NUMBER || "",
+  CALLBACK_URL: process.env.PAYHERO_CALLBACK_URL || "",
+  BASE_URL: process.env.PAYHERO_BASE_URL || "https://backend.payhero.co.ke"
 };
 
 // Validate environment variables
@@ -28,43 +20,10 @@ export const validatePayheroConfig = () => {
   
   if (missing.length > 0) {
     console.error('Missing Payhero environment variables:', missing);
-    console.error('PAYHERO_API_USERNAME value:', PAYHERO_CONFIG.API_USERNAME ? 'SET' : 'MISSING');
-    console.error('PAYHERO_API_PASSWORD value:', PAYHERO_CONFIG.API_PASSWORD ? 'SET' : 'MISSING');
-    console.error('PAYHERO_CHANNEL_ID value:', PAYHERO_CONFIG.CHANNEL_ID ? 'SET' : 'MISSING');
-    console.error('Please add these to your Vercel environment variables');
     return false;
   }
   
   return true;
-};
-
-// Generate Basic Auth token from username and password
-export const getBasicAuthToken = () => {
-  const username = PAYHERO_CONFIG.API_USERNAME;
-  const password = PAYHERO_CONFIG.API_PASSWORD;
-  
-  // Try multiple authentication methods
-  const methods = [
-    // Method 1: Pre-encoded token
-    PAYHERO_CONFIG.BASIC_AUTH_TOKEN,
-    
-    // Method 2: Manual encoding
-    `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`,
-    
-    // Method 3: URL-safe encoding
-    `Basic ${Buffer.from(`${username}:${password}`).toString('base64').replace(/\+/g, '-').replace(/\//g, '_')}`,
-  ];
-  
-  // Debug all methods
-  console.log('Payhero Auth Debug - All Methods:');
-  console.log('Username:', username);
-  console.log('Password:', password ? '***' : 'MISSING');
-  console.log('Method 1 (Pre-encoded):', methods[0]);
-  console.log('Method 2 (Manual):', methods[1]);
-  console.log('Method 3 (URL-safe):', methods[2]);
-  
-  // Return the pre-encoded token if available, otherwise try manual
-  return methods[0] || methods[1];
 };
 
 // Payment request interface
@@ -73,7 +32,7 @@ export interface PaymentRequest {
   phoneNumber: string;
   externalReference: string;
   customerName: string;
-  callbackUrl: string;
+  callbackUrl?: string;
 }
 
 // Payment response interface
@@ -87,10 +46,29 @@ export interface PaymentResponse {
   responseDescription?: string;
 }
 
+// Format phone number for Payhero
+export const formatPhoneNumberForPayhero = (phone: string): string => {
+  // Remove all non-digit characters
+  const cleaned = phone.replace(/\D/g, '');
+  
+  // Handle different formats
+  if (cleaned.startsWith('254') && cleaned.length === 12) {
+    return cleaned; // Already in correct format
+  } else if (cleaned.startsWith('0') && cleaned.length === 10) {
+    return '254' + cleaned.substring(1); // Convert 07XX... to 2547XX...
+  } else if (cleaned.startsWith('7') && cleaned.length === 9) {
+    return '254' + cleaned; // Convert 7XX... to 2547XX...
+  } else if (cleaned.startsWith('+254') && cleaned.length === 13) {
+    return cleaned.substring(1); // Remove + from +254...
+  }
+  
+  return cleaned; // Return as-is if no pattern matches
+};
+
 // Initiate Payhero STK Push
 export async function initiatePayheroPayment(paymentData: PaymentRequest): Promise<PaymentResponse> {
   try {
-    // Validate configuration before making request
+    // Validate configuration
     if (!validatePayheroConfig()) {
       return {
         success: false,
@@ -98,24 +76,27 @@ export async function initiatePayheroPayment(paymentData: PaymentRequest): Promi
       };
     }
     
+    console.log('Initiating Payhero payment with data:', paymentData);
+    
     const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v2/payments`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': getBasicAuthToken(),
+        'Authorization': PAYHERO_CONFIG.BASIC_AUTH_TOKEN,
       },
       body: JSON.stringify({
         amount: paymentData.amount,
         phone_number: paymentData.phoneNumber,
-        channel_id: PAYHERO_CONFIG.CHANNEL_ID,
+        channel_id: parseInt(PAYHERO_CONFIG.CHANNEL_ID),
         provider: "m-pesa",
         external_reference: paymentData.externalReference,
         customer_name: paymentData.customerName,
-        callback_url: paymentData.callbackUrl,
+        callback_url: paymentData.callbackUrl || PAYHERO_CONFIG.CALLBACK_URL,
       }),
     });
 
     const result = await response.json();
+    console.log('Payhero API response:', result);
 
     if (response.ok && result.success) {
       return {
@@ -124,11 +105,13 @@ export async function initiatePayheroPayment(paymentData: PaymentRequest): Promi
         transactionId: result.transaction_id,
         checkoutRequestID: result.checkout_request_id,
         merchantRequestID: result.merchant_request_id,
+        responseCode: result.response_code,
+        responseDescription: result.response_description,
       };
     } else {
       return {
         success: false,
-        message: result.message || 'Failed to initiate payment',
+        message: result.message || 'Payment initiation failed',
         responseCode: result.response_code,
         responseDescription: result.response_description,
       };
@@ -145,10 +128,10 @@ export async function initiatePayheroPayment(paymentData: PaymentRequest): Promi
 // Check payment status
 export async function checkPaymentStatus(checkoutRequestID: string): Promise<PaymentResponse> {
   try {
-    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/v1/transaction/status/${checkoutRequestID}`, {
+    const response = await fetch(`${PAYHERO_CONFIG.BASE_URL}/api/v1/transaction/status/${checkoutRequestID}`, {
       method: 'GET',
       headers: {
-        'Authorization': getBasicAuthToken(),
+        'Authorization': PAYHERO_CONFIG.BASIC_AUTH_TOKEN,
       },
     });
 
@@ -159,43 +142,20 @@ export async function checkPaymentStatus(checkoutRequestID: string): Promise<Pay
         success: result.status === 'completed',
         message: result.message || 'Status checked successfully',
         transactionId: result.transaction_id,
-        responseCode: result.status,
-        responseDescription: result.status_description,
+        responseCode: result.response_code,
+        responseDescription: result.response_description,
       };
     } else {
       return {
         success: false,
-        message: 'Failed to check payment status',
+        message: result.message || 'Status check failed',
       };
     }
   } catch (error) {
-    console.error('Payment status check error:', error);
+    console.error('Payhero status check error:', error);
     return {
       success: false,
       message: 'Status check service unavailable',
     };
   }
-}
-
-// Format phone number for Payhero (remove +254 and ensure 10 digits)
-export function formatPhoneNumberForPayhero(phone: string): string {
-  // Remove all non-digit characters
-  const cleaned = phone.replace(/\D/g, '');
-  
-  // If starts with 254, remove it
-  if (cleaned.startsWith('254')) {
-    return cleaned.substring(2);
-  }
-  
-  // If starts with 0, keep it (Kenyan format)
-  if (cleaned.startsWith('0')) {
-    return cleaned;
-  }
-  
-  // If 9 digits, add 0 at beginning
-  if (cleaned.length === 9) {
-    return '0' + cleaned;
-  }
-  
-  return cleaned;
 }
