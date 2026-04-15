@@ -4,21 +4,32 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Smartphone, CheckCircle, X, Loader2 } from "lucide-react";
+import { generateTransactionCode } from "@/lib/utils";
 
 interface STKPushModalProps {
   isOpen: boolean;
   onClose: () => void;
   phoneNumber: string;
   amount: number;
-  onSuccess: () => void;
+  onSuccess: (transactionCode: string) => void;
 }
 
 export function STKPushModal({ isOpen, onClose, phoneNumber, amount, onSuccess }: STKPushModalProps) {
   const [status, setStatus] = useState<'pending' | 'processing' | 'success' | 'error'>('pending');
   const [countdown, setCountdown] = useState(30);
+  const [transactionCode, setTransactionCode] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setStatus('pending');
+      setCountdown(30);
+      setTransactionCode(generateTransactionCode(8));
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     if (isOpen && status === 'pending') {
+      setTransactionCode(generateTransactionCode(8));
       const timer = setTimeout(() => {
         setStatus('processing');
       }, 1000);
@@ -34,7 +45,7 @@ export function STKPushModal({ isOpen, onClose, phoneNumber, amount, onSuccess }
           if (prev <= 1) {
             setStatus('success');
             setTimeout(() => {
-              onSuccess();
+                onSuccess(transactionCode);
               onClose();
             }, 2000);
             return 0;
@@ -45,7 +56,7 @@ export function STKPushModal({ isOpen, onClose, phoneNumber, amount, onSuccess }
       
       return () => clearInterval(interval);
     }
-  }, [status, onSuccess, onClose]);
+  }, [status, onSuccess, onClose, transactionCode]);
 
   if (!isOpen) return null;
 
@@ -127,6 +138,13 @@ export function STKPushModal({ isOpen, onClose, phoneNumber, amount, onSuccess }
                 <div>
                   <p className="text-lg font-semibold text-gray-900">Payment Successful!</p>
                   <p className="text-sm text-gray-600 mt-1">Your limit boost is being processed</p>
+                  <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4 text-left">
+                    <p className="text-xs uppercase tracking-wide text-green-700">Transaction code</p>
+                    <p className="mt-2 text-xl font-semibold text-green-900">{transactionCode}</p>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Keep this reference safe. It confirms your successful transaction.
+                    </p>
+                  </div>
                 </div>
               </div>
             )}

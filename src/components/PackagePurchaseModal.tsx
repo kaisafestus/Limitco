@@ -13,14 +13,14 @@ interface PackagePurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedPackage: PackageTier;
-  onPaymentSuccess?: (transactionId: string) => void;
+  onPaymentInitiated?: (checkoutRequestId: string, phoneNumber: string, amount: number) => void;
 }
 
 export function PackagePurchaseModal({ 
   isOpen, 
   onClose, 
   selectedPackage, 
-  onPaymentSuccess 
+  onPaymentInitiated 
 }: PackagePurchaseModalProps) {
   const [formData, setFormData] = useState({
     phoneNumber: "",
@@ -60,9 +60,8 @@ export function PackagePurchaseModal({
       const paymentResult = await response.json();
 
       if (response.ok && paymentResult.success) {
-        alert('Payment initiated! Please check your phone for M-Pesa prompt.');
-        if (onPaymentSuccess) {
-          onPaymentSuccess(paymentResult.checkoutRequestID || '');
+        if (onPaymentInitiated) {
+          onPaymentInitiated(paymentResult.checkoutRequestID || '', formattedPhone, selectedPackage.price);
         }
         onClose();
       } else {

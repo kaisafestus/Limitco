@@ -6,24 +6,31 @@ import { Header } from "@/components/Header";
 import { MainHero } from "@/components/MainHero";
 import { PricingGrid } from "@/components/PricingGrid";
 import { BottomLeftNotifications } from "@/components/BottomLeftNotifications";
-import { BackgroundRotator } from "@/components/BackgroundRotator";
 import { PackagePurchaseModal } from "@/components/PackagePurchaseModal";
+import { useRouter } from "next/navigation";
 import { STKPushModal } from "@/components/STKPushModal";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
   const [selectedPackage, setSelectedPackage] = useState<PackageTier | null>(null);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [transactionAmount, setTransactionAmount] = useState(0);
+  const [transactionPackageName, setTransactionPackageName] = useState("");
   const [showSTKPush, setShowSTKPush] = useState(false);
   const [userPhone, setUserPhone] = useState("");
+  const router = useRouter();
 
   const handlePackageSelect = (tier: PackageTier) => {
     setSelectedPackage(tier);
     setShowPurchaseModal(true);
   };
-
-  
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = (transactionCode: string) => {
+    const packageName = transactionPackageName || "Fuliza Package";
+    router.push(
+      `/success?code=${transactionCode}&amount=${transactionAmount}&package=${encodeURIComponent(
+        packageName,
+      )}`,
+    );
     // Redirect to success page or show success state
     console.log("Payment successful for:", selectedPackage);
   };
@@ -33,6 +40,12 @@ export default function Home() {
     setSelectedPackage(null);
   };
 
+  const handlePaymentInitiated = (checkoutRequestId: string, phoneNumber: string, amount: number) => {
+    setUserPhone(phoneNumber);
+    setTransactionAmount(amount);
+    setTransactionPackageName(selectedPackage?.name || "Fuliza Package");
+    setShowSTKPush(true);
+  };
   const handleCloseSTKPush = () => {
     setShowSTKPush(false);
   };
@@ -59,9 +72,9 @@ export default function Home() {
       {selectedPackage && (
         <PackagePurchaseModal
           isOpen={showPurchaseModal}
-          onClose={handleClosePurchaseModal}
+          onPaymentInitiated={handlePaymentInitiated}
           selectedPackage={selectedPackage}
-          onPaymentSuccess={handlePaymentSuccess}
+          onClose={handleClosePurchaseModal}
         />
       )}
 
