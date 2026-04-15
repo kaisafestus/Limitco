@@ -1,16 +1,20 @@
-"use client";
-
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2 } from "lucide-react";
 
-export default function SuccessPage() {
-  const searchParams = useSearchParams();
-  const code = searchParams.get("code") || "N/A";
-  const amount = searchParams.get("amount") || "0";
-  const packageName = searchParams.get("package") || "Fuliza Package";
+interface SuccessPageProps {
+  searchParams: {
+    code?: string;
+    amount?: string;
+    package?: string;
+  };
+}
+
+export default function SuccessPage({ searchParams }: SuccessPageProps) {
+  const code = searchParams.code || "N/A";
+  const amount = searchParams.amount || "0";
+  const packageName = searchParams.package || "Fuliza Package";
 
   return (
     <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center px-4 py-12">
