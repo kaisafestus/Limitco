@@ -82,9 +82,12 @@ export function PackagePurchaseModal({
 
   const checkPaymentStatusPeriodically = async (checkoutId: string) => {
     try {
+      console.log('Checking payment status for:', checkoutId);
       const statusResult = await checkPaymentStatus(checkoutId);
+      console.log('Payment status result:', statusResult);
       
-      if (statusResult.success) {
+      // Check for successful payment completion
+      if (statusResult.success || statusResult.responseCode === '0' || statusResult.responseDescription?.toLowerCase().includes('success') || statusResult.responseDescription?.toLowerCase().includes('completed')) {
         // Payment completed successfully
         setPaymentStatus('completed');
         clearIntervals();
@@ -92,24 +95,73 @@ export function PackagePurchaseModal({
           onPaymentCompleted(true, 'Payment completed successfully!');
         }
         setTimeout(() => onClose(), 2000);
-      } else if (statusResult.responseCode === '1001' || statusResult.responseDescription?.toLowerCase().includes('cancel')) {
-        // Payment cancelled
+        return;
+      }
+      
+      // Check for payment cancellation
+      if (
+        statusResult.responseCode === '1001' || 
+        statusResult.responseCode === 'CANCELED' ||
+        statusResult.responseDescription?.toLowerCase().includes('cancel') ||
+        statusResult.responseDescription?.toLowerCase().includes('user cancelled') ||
+        statusResult.responseDescription?.toLowerCase().includes('declined') ||
+        statusResult.responseDescription?.toLowerCase().includes('rejected')
+      ) {
+        // Payment cancelled by user
         setPaymentStatus('cancelled');
         setErrorMessage(getErrorMessage('cancelled', statusResult.responseDescription));
         clearIntervals();
-      } else if (statusResult.responseCode === '1002' || statusResult.responseDescription?.toLowerCase().includes('timeout')) {
+        return;
+      }
+      
+      // Check for payment timeout
+      if (
+        statusResult.responseCode === '1002' || 
+        statusResult.responseCode === 'TIMEOUT' ||
+        statusResult.responseDescription?.toLowerCase().includes('timeout') ||
+        statusResult.responseDescription?.toLowerCase().includes('expired')
+      ) {
         // Payment timed out
         setPaymentStatus('timeout');
         setErrorMessage(getErrorMessage('timeout', statusResult.responseDescription));
         clearIntervals();
-      } else if (statusResult.responseCode === '1003' || statusResult.responseDescription?.toLowerCase().includes('insufficient')) {
+        return;
+      }
+      
+      // Check for insufficient funds
+      if (
+        statusResult.responseCode === '1003' || 
+        statusResult.responseCode === 'INSUFFICIENT' ||
+        statusResult.responseDescription?.toLowerCase().includes('insufficient') ||
+        statusResult.responseDescription?.toLowerCase().includes('balance') ||
+        statusResult.responseDescription?.toLowerCase().includes('funds')
+      ) {
         // Insufficient funds
         setPaymentStatus('failed');
         setErrorMessage(getErrorMessage('insufficient_funds', statusResult.responseDescription));
         clearIntervals();
+        return;
       }
+      
+      // Check for failed payment (general failure)
+      if (
+        statusResult.responseCode === '1004' || 
+        statusResult.responseCode === 'FAILED' ||
+        statusResult.responseDescription?.toLowerCase().includes('failed') ||
+        statusResult.responseDescription?.toLowerCase().includes('error')
+      ) {
+        // Payment failed
+        setPaymentStatus('failed');
+        setErrorMessage(getErrorMessage('general', statusResult.responseDescription));
+        clearIntervals();
+        return;
+      }
+      
+      // If still pending, continue checking
+      console.log('Payment still pending, continuing to check...');
     } catch (error) {
       console.error('Status check error:', error);
+      // Don't immediately fail on network error, continue checking
     }
   };
 
@@ -119,6 +171,8 @@ export function PackagePurchaseModal({
       timeoutInterval.current = setInterval(() => {
         setTimeLeft(prev => {
           if (prev <= 1) {
+            // Final status check before timeout
+            checkPaymentStatusPeriodically(checkoutRequestId);
             setPaymentStatus('timeout');
             setErrorMessage(getErrorMessage('timeout'));
             clearIntervals();
@@ -130,7 +184,7 @@ export function PackagePurchaseModal({
     }
 
     return () => clearIntervals();
-  }, [paymentStatus, timeLeft]);
+  }, [paymentStatus, timeLeft, checkoutRequestId]);
 
   useEffect(() => {
     // Cleanup intervals on unmount
@@ -180,10 +234,17 @@ export function PackagePurchaseModal({
           onPaymentInitiated(paymentResult.checkoutRequestID || '', formattedPhone, selectedPackage.price);
         }
 
-        // Start checking payment status every 5 seconds
+        // Start checking payment status every 3 seconds for faster detection
         statusCheckInterval.current = setInterval(() => {
           checkPaymentStatusPeriodically(paymentResult.checkoutRequestID || '');
-        }, 5000);
+        }, 3000);
+        
+        // Also check immediately after 2 seconds to catch quick responses
+        setTimeout(() => {
+          if (paymentStatus === 'pending') {
+            checkPaymentStatusPeriodically(paymentResult.checkoutRequestID || '');
+          }
+        }, 2000);
       } else {
         // Payment initiation failed
         setPaymentStatus('failed');
