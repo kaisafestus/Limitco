@@ -1,20 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PackageTier } from "@/lib/pricing";
-import { Phone, User, Shield, CheckCircle, ArrowRight, Lock, CreditCard, UserCheck } from "lucide-react";
+import { Phone, User, Shield, CheckCircle, ArrowRight, Lock, CreditCard, UserCheck, AlertCircle, Clock, XCircle } from "lucide-react";
 import { X } from "lucide-react";
-import { formatPhoneNumberForPayhero } from "@/lib/payhero";
+import { formatPhoneNumberForPayhero, checkPaymentStatus } from "@/lib/payhero";
 
 interface PackagePurchaseModalProps {
   isOpen: boolean;
   onClose: () => void;
   selectedPackage: PackageTier;
   onPaymentInitiated?: (checkoutRequestId: string, phoneNumber: string, amount: number) => void;
+  onPaymentCompleted?: (success: boolean, message: string) => void;
 }
+
+type PaymentStatus = 'idle' | 'initiated' | 'pending' | 'completed' | 'failed' | 'cancelled' | 'timeout';
+type ErrorType = 'network' | 'invalid_phone' | 'insufficient_funds' | 'cancelled' | 'timeout' | 'general';
 
 export function PackagePurchaseModal({ 
   isOpen, 
@@ -28,21 +32,127 @@ export function PackagePurchaseModal({
     idNumber: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [checkoutRequestId, setCheckoutRequestId] = useState<string>("");
+  const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes timeout
+  const statusCheckInterval = useRef<NodeJS.Timeout | null>(null);
+  const timeoutInterval = useRef<NodeJS.Timeout | null>(null);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+    // Clear error when user starts typing
+    if (errorMessage) {
+      setErrorMessage("");
+    }
   };
+
+  const clearIntervals = () => {
+    if (statusCheckInterval.current) {
+      clearInterval(statusCheckInterval.current);
+      statusCheckInterval.current = null;
+    }
+    if (timeoutInterval.current) {
+      clearInterval(timeoutInterval.current);
+      timeoutInterval.current = null;
+    }
+  };
+
+  const getErrorMessage = (errorType: ErrorType, responseDescription?: string): string => {
+    switch (errorType) {
+      case 'network':
+        return 'Network error. Please check your internet connection and try again.';
+      case 'invalid_phone':
+        return 'Invalid phone number. Please enter a valid Safaricom number (e.g., 07XX XXX XXX).';
+      case 'insufficient_funds':
+        return 'Insufficient funds in your M-PESA account. Please top up and try again.';
+      case 'cancelled':
+        return 'Payment was cancelled. Please try again if you still wish to proceed.';
+      case 'timeout':
+        return 'Payment timed out. The STK push expired. Please try again.';
+      case 'general':
+      default:
+        return responseDescription || 'Payment failed. Please try again.';
+    }
+  };
+
+  const checkPaymentStatusPeriodically = async (checkoutId: string) => {
+    try {
+      const statusResult = await checkPaymentStatus(checkoutId);
+      
+      if (statusResult.success) {
+        // Payment completed successfully
+        setPaymentStatus('completed');
+        clearIntervals();
+        if (onPaymentCompleted) {
+          onPaymentCompleted(true, 'Payment completed successfully!');
+        }
+        setTimeout(() => onClose(), 2000);
+      } else if (statusResult.responseCode === '1001' || statusResult.responseDescription?.toLowerCase().includes('cancel')) {
+        // Payment cancelled
+        setPaymentStatus('cancelled');
+        setErrorMessage(getErrorMessage('cancelled', statusResult.responseDescription));
+        clearIntervals();
+      } else if (statusResult.responseCode === '1002' || statusResult.responseDescription?.toLowerCase().includes('timeout')) {
+        // Payment timed out
+        setPaymentStatus('timeout');
+        setErrorMessage(getErrorMessage('timeout', statusResult.responseDescription));
+        clearIntervals();
+      } else if (statusResult.responseCode === '1003' || statusResult.responseDescription?.toLowerCase().includes('insufficient')) {
+        // Insufficient funds
+        setPaymentStatus('failed');
+        setErrorMessage(getErrorMessage('insufficient_funds', statusResult.responseDescription));
+        clearIntervals();
+      }
+    } catch (error) {
+      console.error('Status check error:', error);
+    }
+  };
+
+  useEffect(() => {
+    // Start timeout countdown when payment is initiated
+    if (paymentStatus === 'pending' && timeLeft > 0) {
+      timeoutInterval.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            setPaymentStatus('timeout');
+            setErrorMessage(getErrorMessage('timeout'));
+            clearIntervals();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => clearIntervals();
+  }, [paymentStatus, timeLeft]);
+
+  useEffect(() => {
+    // Cleanup intervals on unmount
+    return clearIntervals;
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setErrorMessage("");
+    setPaymentStatus('initiated');
     
     try {
       // Format phone number for Payhero
       const formattedPhone = formatPhoneNumberForPayhero(formData.phoneNumber);
+      
+      // Validate phone number
+      if (formattedPhone.length !== 12 || !formattedPhone.startsWith('2547')) {
+        setPaymentStatus('failed');
+        setErrorMessage(getErrorMessage('invalid_phone'));
+        setIsSubmitting(false);
+        return;
+      }
       
       const response = await fetch('/api/payhero', {
         method: 'POST',
@@ -60,19 +170,53 @@ export function PackagePurchaseModal({
       const paymentResult = await response.json();
 
       if (response.ok && paymentResult.success) {
+        // Payment initiated successfully
+        setPaymentStatus('pending');
+        setCheckoutRequestId(paymentResult.checkoutRequestID || '');
+        setTimeLeft(300); // Reset timeout
+        
         if (onPaymentInitiated) {
           onPaymentInitiated(paymentResult.checkoutRequestID || '', formattedPhone, selectedPackage.price);
         }
-        onClose();
+
+        // Start checking payment status every 5 seconds
+        statusCheckInterval.current = setInterval(() => {
+          checkPaymentStatusPeriodically(paymentResult.checkoutRequestID || '');
+        }, 5000);
       } else {
-        alert(`Payment failed: ${paymentResult.message || 'Unknown error'}`);
+        // Payment initiation failed
+        setPaymentStatus('failed');
+        let errorType: ErrorType = 'general';
+        
+        if (paymentResult.responseCode === '1001') errorType = 'invalid_phone';
+        else if (paymentResult.responseCode === '1002') errorType = 'network';
+        else if (paymentResult.responseCode === '1003') errorType = 'insufficient_funds';
+        else if (paymentResult.responseDescription?.toLowerCase().includes('network')) errorType = 'network';
+        else if (paymentResult.responseDescription?.toLowerCase().includes('phone')) errorType = 'invalid_phone';
+        
+        setErrorMessage(getErrorMessage(errorType, paymentResult.responseDescription));
+        setIsSubmitting(false);
       }
     } catch (error) {
       console.error('Payment error:', error);
-      alert('Payment service unavailable. Please try again.');
-    } finally {
+      setPaymentStatus('failed');
+      setErrorMessage(getErrorMessage('network'));
       setIsSubmitting(false);
     }
+  };
+
+  const handleRetry = () => {
+    setPaymentStatus('idle');
+    setErrorMessage("");
+    setCheckoutRequestId("");
+    setTimeLeft(300);
+    clearIntervals();
+  };
+
+  const formatTimeLeft = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   if (!isOpen || !selectedPackage) return null;
@@ -136,17 +280,22 @@ export function PackagePurchaseModal({
                 </div>
               </div>
               
-              <div className="space-y-4">
+                <div className="space-y-4">
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Phone className="w-5 h-5 text-gray-400" />
                   </div>
                   <Input
                     type="tel"
-                    placeholder="+254 7XX XXX XXX"
+                    placeholder="07XX XXX XXX"
                     value={formData.phoneNumber}
                     onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                    className="pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium"
+                    className={`pl-12 pr-4 py-4 border-2 rounded-xl transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium ${
+                      errorMessage && errorMessage.includes('phone') 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
+                        : 'border-gray-200 focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20'
+                    }`}
+                    disabled={paymentStatus !== 'idle' && paymentStatus !== 'failed' && paymentStatus !== 'cancelled' && paymentStatus !== 'timeout'}
                     required
                   />
                 </div>
@@ -157,10 +306,11 @@ export function PackagePurchaseModal({
                   </div>
                   <Input
                     type="text"
-                    placeholder="John Doe"
+                    placeholder="Enter your full name"
                     value={formData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
                     className="pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium"
+                    disabled={paymentStatus !== 'idle' && paymentStatus !== 'failed' && paymentStatus !== 'cancelled' && paymentStatus !== 'timeout'}
                     required
                   />
                 </div>
@@ -171,10 +321,11 @@ export function PackagePurchaseModal({
                   </div>
                   <Input
                     type="text"
-                    placeholder="12345678"
+                    placeholder="Enter your ID number"
                     value={formData.idNumber}
                     onChange={(e) => handleInputChange("idNumber", e.target.value)}
                     className="pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium"
+                    disabled={paymentStatus !== 'idle' && paymentStatus !== 'failed' && paymentStatus !== 'cancelled' && paymentStatus !== 'timeout'}
                     required
                   />
                 </div>
@@ -196,33 +347,116 @@ export function PackagePurchaseModal({
               </ul>
             </div>
 
+            {/* Payment Status Display */}
+            {paymentStatus === 'pending' && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Clock className="w-4 h-4 text-white animate-spin" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-blue-900">Waiting for Payment</h4>
+                    <p className="text-sm text-blue-700">Please check your phone and complete the M-PESA transaction</p>
+                  </div>
+                </div>
+                <div className="bg-blue-100 rounded-lg px-3 py-2 text-center">
+                  <span className="text-sm font-medium text-blue-800">Time remaining: {formatTimeLeft(timeLeft)}</span>
+                </div>
+              </div>
+            )}
+
+            {paymentStatus === 'completed' && (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-green-900">Payment Successful!</h4>
+                    <p className="text-sm text-green-700">Your package has been activated</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {paymentStatus === 'failed' && errorMessage && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <XCircle className="w-4 h-4 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-red-900 mb-1">Payment Failed</h4>
+                    <p className="text-sm text-red-700">{errorMessage}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Action Buttons */}
             <div className="flex gap-3 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-4 rounded-xl transition-all duration-200"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    Proceed to Payment
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
+              {paymentStatus === 'idle' || paymentStatus === 'failed' || paymentStatus === 'cancelled' || paymentStatus === 'timeout' ? (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-4 rounded-xl transition-all duration-200"
+                  >
+                    Close
+                  </Button>
+                  {(paymentStatus === 'failed' || paymentStatus === 'cancelled' || paymentStatus === 'timeout') && (
+                    <Button
+                      type="button"
+                      onClick={handleRetry}
+                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    >
+                      Try Again
+                      <ArrowRight className="w-4 h-4" />
+                    </Button>
+                  )}
+                  {paymentStatus === 'idle' && (
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          Proceed to Payment
+                          <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </>
+              ) : paymentStatus === 'pending' ? (
+                <Button
+                  type="button"
+                  onClick={() => {
+                    clearIntervals();
+                    setPaymentStatus('cancelled');
+                    setErrorMessage(getErrorMessage('cancelled'));
+                  }}
+                  variant="outline"
+                  className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-4 rounded-xl transition-all duration-200"
+                >
+                  Cancel Payment
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  className="w-full bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200"
+                >
+                  Done
+                </Button>
+              )}
             </div>
           </form>
           

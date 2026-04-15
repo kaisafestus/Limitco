@@ -20,7 +20,7 @@ export default function ContactPage() {
                   <Phone className="w-6 h-6 text-[#28a745] mt-1" />
                   <div>
                     <h3 className="font-semibold text-gray-900">Phone</h3>
-                    <p className="text-gray-600">07XX XXX XXX</p>
+                    <p className="text-gray-600">0720000000</p>
                     <p className="text-sm text-gray-500">Available 24/7</p>
                   </div>
                 </div>
