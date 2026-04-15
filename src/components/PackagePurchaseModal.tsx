@@ -54,8 +54,7 @@ export function PackagePurchaseModal({
           phoneNumber: formattedPhone,
           externalReference: `FULIZA_${selectedPackage.id}_${Date.now()}`,
           customerName: formData.fullName,
-          })
-        })
+        }),
       });
 
       const paymentResult = await response.json();
