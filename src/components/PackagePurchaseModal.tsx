@@ -24,7 +24,8 @@ export function PackagePurchaseModal({
   isOpen, 
   onClose, 
   selectedPackage, 
-  onPaymentInitiated 
+  onPaymentInitiated,
+  onPaymentCompleted
 }: PackagePurchaseModalProps) {
   const [formData, setFormData] = useState({
     phoneNumber: "",
