@@ -13,7 +13,7 @@ export const packageTiers: PackageTier[] = [
     id: 1,
     name: "FULIZA 3,000",
     limit: 3000,
-    price: 5,
+    price: 49,
     description: "Get instant access to 3,000 KES Fuliza limit",
     features: ["One-time fee", "Instant approval", "24/7 support"],
     hot: true
