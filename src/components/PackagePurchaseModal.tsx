@@ -284,46 +284,46 @@ export function PackagePurchaseModal({
   if (!isOpen || !selectedPackage) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/40" onClick={onClose}></div>
       
-      <Card className="relative z-10 w-full max-w-md mx-auto shadow-2xl border-0 overflow-hidden">
-        <CardHeader className="bg-gradient-to-br from-[#00C853] via-[#00E676] to-[#00C853] text-white relative p-6">
+      <Card className="relative z-10 w-full max-w-md mx-auto shadow-2xl border-0 overflow-hidden max-h-[90vh] overflow-y-auto">
+        <CardHeader className="bg-gradient-to-br from-[#00C853] via-[#00E676] to-[#00C853] text-white relative p-4 sm:p-6">
           <Button
             variant="ghost"
             size="icon"
             onClick={onClose}
-            className="absolute right-4 top-4 text-white hover:bg-white/20 transition-all duration-200 rounded-full"
+            className="absolute right-2 sm:right-4 top-2 sm:top-4 text-white hover:bg-white/20 transition-all duration-200 rounded-full"
           >
             <X className="w-5 h-5" />
           </Button>
           
-          <div className="text-center pr-8">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CreditCard className="w-8 h-8 text-white" />
+          <div className="text-center pr-6 sm:pr-8">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <CreditCard className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <CardTitle className="text-2xl font-bold mb-2">
+            <CardTitle className="text-xl sm:text-2xl font-bold mb-2">
               Complete Your Purchase
             </CardTitle>
-            <CardDescription className="text-white/90 text-base font-medium">
+            <CardDescription className="text-white/90 text-sm sm:text-base font-medium">
               Package {selectedPackage.id} - {selectedPackage.name}
             </CardDescription>
           </div>
         </CardHeader>
         
-        <CardContent className="p-6 space-y-6">
+        <CardContent className="p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* Package Summary */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-5 border border-gray-200">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-3 sm:p-5 border border-gray-200">
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-white rounded-xl p-4 text-center">
+              <div className="bg-white rounded-xl p-3 sm:p-4 text-center">
                 <div className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-1">Package Price</div>
-                <div className="text-2xl font-bold text-[#00C853]">
+                <div className="text-xl sm:text-2xl font-bold text-[#00C853]">
                   KSh {selectedPackage.price.toLocaleString()}
                 </div>
               </div>
-              <div className="bg-white rounded-xl p-4 text-center">
+              <div className="bg-white rounded-xl p-3 sm:p-4 text-center">
                 <div className="text-xs text-gray-600 font-semibold uppercase tracking-wider mb-1">New Limit</div>
-                <div className="text-2xl font-bold text-[#00C853]">
+                <div className="text-xl sm:text-2xl font-bold text-[#00C853]">
                   KSh {selectedPackage.limit.toLocaleString()}
                 </div>
               </div>
@@ -331,28 +331,28 @@ export function PackagePurchaseModal({
           </div>
 
           {/* Limit Check Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-5">
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center gap-2 bg-[#00C853]/10 rounded-full px-4 py-2">
+          <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+            <div className="space-y-4 sm:space-y-5">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="inline-flex items-center gap-2 bg-[#00C853]/10 rounded-full px-3 sm:px-4 py-2">
                   <UserCheck className="w-4 h-4 text-[#00C853]" />
-                  <h3 className="text-base font-semibold text-gray-800">
+                  <h3 className="text-sm sm:text-base font-semibold text-gray-800">
                     Enter Your Details
                   </h3>
                 </div>
               </div>
               
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Phone className="w-5 h-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                    <Phone className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                   </div>
                   <Input
                     type="tel"
                     placeholder="07XX XXX XXX"
                     value={formData.phoneNumber}
                     onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                    className={`pl-12 pr-4 py-4 border-2 rounded-xl transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium ${
+                    className={`pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 border-2 rounded-xl transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-sm sm:text-base font-medium ${
                       errorMessage && errorMessage.includes('phone') 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' 
                         : 'border-gray-200 focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20'
@@ -363,30 +363,30 @@ export function PackagePurchaseModal({
                 </div>
                 
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="w-5 h-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                   </div>
                   <Input
                     type="text"
                     placeholder="Enter your full name"
                     value={formData.fullName}
                     onChange={(e) => handleInputChange("fullName", e.target.value)}
-                    className="pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium"
+                    className="pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-sm sm:text-base font-medium"
                     disabled={paymentStatus !== 'idle' && paymentStatus !== 'failed' && paymentStatus !== 'cancelled' && paymentStatus !== 'timeout'}
                     required
                   />
                 </div>
                 
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Shield className="w-5 h-5 text-gray-400" />
+                  <div className="absolute inset-y-0 left-0 pl-3 sm:pl-4 flex items-center pointer-events-none">
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                   </div>
                   <Input
                     type="text"
                     placeholder="Enter your ID number"
                     value={formData.idNumber}
                     onChange={(e) => handleInputChange("idNumber", e.target.value)}
-                    className="pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-base font-medium"
+                    className="pl-10 sm:pl-12 pr-3 sm:pr-4 py-3 sm:py-4 border-2 border-gray-200 rounded-xl focus:border-[#00C853] focus:ring-2 focus:ring-[#00C853]/20 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500 text-sm sm:text-base font-medium"
                     disabled={paymentStatus !== 'idle' && paymentStatus !== 'failed' && paymentStatus !== 'cancelled' && paymentStatus !== 'timeout'}
                     required
                   />
@@ -395,13 +395,13 @@ export function PackagePurchaseModal({
             </div>
 
             {/* Package Features */}
-            <div className="bg-gradient-to-r from-[#00C853]/5 to-[#00E676]/5 rounded-2xl p-5 border border-[#00C853]/20">
-              <h4 className="font-semibold text-gray-900 mb-4 text-base">What You'll Get:</h4>
-              <ul className="space-y-3">
+            <div className="bg-gradient-to-r from-[#00C853]/5 to-[#00E676]/5 rounded-2xl p-3 sm:p-5 border border-[#00C853]/20">
+              <h4 className="font-semibold text-gray-900 mb-3 sm:mb-4 text-sm sm:text-base">What You'll Get:</h4>
+              <ul className="space-y-2 sm:space-y-3">
                 {selectedPackage.features.map((feature, index) => (
-                  <li key={index} className="flex items-center gap-3 text-sm text-gray-700">
-                    <div className="w-5 h-5 bg-[#00C853] rounded-full flex items-center justify-center flex-shrink-0">
-                      <CheckCircle className="w-3 h-3 text-white" />
+                  <li key={index} className="flex items-center gap-2 sm:gap-3 text-xs sm:text-sm text-gray-700">
+                    <div className="w-4 h-4 sm:w-5 sm:h-5 bg-[#00C853] rounded-full flex items-center justify-center flex-shrink-0">
+                      <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-white" />
                     </div>
                     <span className="font-medium">{feature}</span>
                   </li>
@@ -411,59 +411,59 @@ export function PackagePurchaseModal({
 
             {/* Payment Status Display */}
             {paymentStatus === 'pending' && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Clock className="w-4 h-4 text-white animate-spin" />
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                    <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-white animate-spin" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-blue-900">Waiting for Payment</h4>
-                    <p className="text-sm text-blue-700">Please check your phone and complete the M-PESA transaction</p>
+                    <h4 className="font-semibold text-blue-900 text-sm sm:text-base">Waiting for Payment</h4>
+                    <p className="text-xs sm:text-sm text-blue-700">Please check your phone and complete the M-PESA transaction</p>
                   </div>
                 </div>
-                <div className="bg-blue-100 rounded-lg px-3 py-2 text-center">
-                  <span className="text-sm font-medium text-blue-800">Time remaining: {formatTimeLeft(timeLeft)}</span>
+                <div className="bg-blue-100 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-center">
+                  <span className="text-xs sm:text-sm font-medium text-blue-800">Time remaining: {formatTimeLeft(timeLeft)}</span>
                 </div>
               </div>
             )}
 
             {paymentStatus === 'completed' && (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-white" />
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-green-500 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-green-900">Payment Successful!</h4>
-                    <p className="text-sm text-green-700">Your package has been activated</p>
+                    <h4 className="font-semibold text-green-900 text-sm sm:text-base">Payment Successful!</h4>
+                    <p className="text-xs sm:text-sm text-green-700">Your package has been activated</p>
                   </div>
                 </div>
               </div>
             )}
 
             {paymentStatus === 'failed' && errorMessage && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <XCircle className="w-4 h-4 text-white" />
+              <div className="bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4">
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <XCircle className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-red-900 mb-1">Payment Failed</h4>
-                    <p className="text-sm text-red-700">{errorMessage}</p>
+                    <h4 className="font-semibold text-red-900 mb-1 text-sm sm:text-base">Payment Failed</h4>
+                    <p className="text-xs sm:text-sm text-red-700">{errorMessage}</p>
                   </div>
                 </div>
               </div>
             )}
 
             {/* Action Buttons */}
-            <div className="flex gap-3 pt-2">
+            <div className="flex gap-2 sm:gap-3 pt-2">
               {paymentStatus === 'idle' || paymentStatus === 'failed' || paymentStatus === 'cancelled' || paymentStatus === 'timeout' ? (
                 <>
                   <Button
                     type="button"
                     variant="outline"
                     onClick={onClose}
-                    className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-4 rounded-xl transition-all duration-200"
+                    className="flex-1 border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-3 sm:py-4 rounded-xl transition-all duration-200 text-sm sm:text-base"
                   >
                     Close
                   </Button>
@@ -471,27 +471,27 @@ export function PackagePurchaseModal({
                     <Button
                       type="button"
                       onClick={handleRetry}
-                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-3 sm:py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
                     >
                       Try Again
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                     </Button>
                   )}
                   {paymentStatus === 'idle' && (
                     <Button
                       type="submit"
                       disabled={isSubmitting}
-                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                      className="flex-1 bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-3 sm:py-4 rounded-xl transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] text-sm sm:text-base"
                     >
                       {isSubmitting ? (
                         <>
-                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <div className="w-3 h-3 sm:w-4 sm:h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                           Processing...
                         </>
                       ) : (
                         <>
                           Proceed to Payment
-                          <ArrowRight className="w-4 h-4" />
+                          <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4" />
                         </>
                       )}
                     </Button>
@@ -506,7 +506,7 @@ export function PackagePurchaseModal({
                     setErrorMessage(getErrorMessage('cancelled'));
                   }}
                   variant="outline"
-                  className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-4 rounded-xl transition-all duration-200"
+                  className="w-full border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-gray-400 font-semibold py-3 sm:py-4 rounded-xl transition-all duration-200 text-sm sm:text-base"
                 >
                   Cancel Payment
                 </Button>
@@ -514,7 +514,7 @@ export function PackagePurchaseModal({
                 <Button
                   type="button"
                   onClick={onClose}
-                  className="w-full bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-4 rounded-xl transition-all duration-200"
+                  className="w-full bg-gradient-to-r from-[#00C853] via-[#00E676] to-[#00C853] hover:from-[#00B844] hover:via-[#00D35F] hover:to-[#00B844] text-white font-bold py-3 sm:py-4 rounded-xl transition-all duration-200 text-sm sm:text-base"
                 >
                   Done
                 </Button>
@@ -522,7 +522,7 @@ export function PackagePurchaseModal({
             </div>
           </form>
           
-          <div className="mt-6 text-center">
+          <div className="mt-4 sm:mt-6 text-center">
             <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
               <Lock className="w-3 h-3" />
               <span>Secured by industry-standard encryption</span>

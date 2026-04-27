@@ -3,7 +3,7 @@
 import { PackageTier } from "@/lib/pricing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Zap } from "lucide-react";
+import { Zap } from "lucide-react";
 
 interface PricingCardProps {
   tier: PackageTier;
@@ -20,9 +20,8 @@ export function PricingCard({ tier, onSelect, selected }: PricingCardProps) {
         {/* Hot Badge */}
         {tier.hot && (
           <div className="flex items-center justify-center">
-            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
-              <Flame className="w-3 h-3" />
-              Hot
+            <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+              HOT
             </div>
           </div>
         )}
